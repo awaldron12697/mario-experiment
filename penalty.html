@@ -161,16 +161,16 @@
         }, 1200);
     }
 
-    function finishGame(reason) {
+function finishGame(reason) {
         let statsHTML = '';
-        if (!penaltyMode) {
-            statsHTML = `
-                <div class="stats-box">
-                    <p><strong>Time Left:</strong> ${timeLeft} seconds</p>
-                    <p><strong>Incorrect Answers:</strong> ${totalIncorrect}</p>
-                </div>
-            `;
-        }
+        
+        // This part now runs for BOTH versions to show Time Left
+        statsHTML = `
+            <div class="stats-box">
+                <p><strong>Time Left:</strong> ${timeLeft} seconds</p>
+                ${!penaltyMode ? `<p><strong>Incorrect Answers:</strong> ${totalIncorrect}</p>` : ''}
+            </div>
+        `;
         
         document.getElementById('game-screen').innerHTML = `
             <h1>${reason}</h1>
