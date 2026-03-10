@@ -15,6 +15,7 @@
         #game-screen { display: none; }
         #welcome-screen { text-align: left; }
         h1 { text-align: center; color: #2c3e50; }
+        .stats-box { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; text-align: left; }
     </style>
 </head>
 <body>
@@ -23,7 +24,7 @@
     <div id="welcome-screen">
         <h1 id="welcome-title">Welcome</h1>
         <p id="welcome-text"></p>
-        <button onclick="startGame()">START ASSESSMENT</button>
+        <button onclick="startGame()">START</button>
     </div>
 
     <div id="game-screen">
@@ -38,13 +39,13 @@
 </div>
 
 <script>
-    // CONFIGURATION: Set to 'false' for the Game version (game.html)
-    const penaltyMode = false; 
-    const TOTAL_TIME = 60; // Total seconds for the test
+    const penaltyMode = false; // SET TO FALSE FOR GAME VERSION
+    const TOTAL_TIME = 60; 
     
     let score = 100;
     let current = 0;
-    let attempts = 0;
+    let attemptsOnLevel = 0;
+    let totalIncorrect = 0;
     let timerInterval;
     let timeLeft = TOTAL_TIME;
 
@@ -61,10 +62,10 @@
         {q: "J, F, M, A, M, J, J, ...", a: "A"}
     ];
 
-    // Setup Welcome Screen Text
     if (penaltyMode) {
         document.getElementById('welcome-title').innerText = "Sequence Assessment";
         document.getElementById('welcome-text').innerText = "You will start with 100 points and will be given a series of 10 questions. Each wrong answer will deduct 10 points from your score. You will have two chances to answer a question correctly. You will have " + TOTAL_TIME + " seconds to complete the assessment. Your score will be given to you at the end, please screenshot this.";
+        document.querySelector('#welcome-screen button').innerText = "START ASSESSMENT";
     } else {
         document.getElementById('welcome-title').innerText = "Sequence Game!";
         document.getElementById('welcome-text').innerText = "You will be given 10 questions and have " + TOTAL_TIME + " seconds to solve them. You will have two chances to answer each question correctly. Please screenshot your results at the end and have fun!";
@@ -90,7 +91,7 @@
     }
 
     function updateUI() {
-        attempts = 0;
+        attemptsOnLevel = 0;
         document.getElementById('qText').innerText = levels[current].q;
         document.getElementById('userInput').value = "";
         document.getElementById('userInput').focus();
@@ -117,14 +118,15 @@
                 setTimeout(() => { feedback.innerText = ""; updateUI(); }, 600);
             } else {
                 clearInterval(timerInterval);
-                finishGame("COMPLETE.");
+                finishGame("QUESTIONS COMPLETE!");
             }
         } else {
-            attempts++;
+            attemptsOnLevel++;
+            totalIncorrect++;
             if (penaltyMode) {
                 score -= 10;
                 document.getElementById('uiBox').innerText = "SCORE: " + score;
-                if (attempts < 2) {
+                if (attemptsOnLevel < 2) {
                     feedback.innerText = "INCORRECT. -10 POINTS. ONE MORE TRY.";
                     feedback.style.color = "#e74c3c";
                 } else {
@@ -133,7 +135,7 @@
                     moveToNext();
                 }
             } else {
-                if (attempts < 2) {
+                if (attemptsOnLevel < 2) {
                     feedback.innerText = "Incorrect, try again!";
                     feedback.style.color = "#3498db";
                 } else {
@@ -159,10 +161,23 @@
     }
 
     function finishGame(reason) {
+        let statsHTML = '';
+        if (!penaltyMode) {
+            statsHTML = `
+                <div class="stats-box">
+                    <p><strong>Time Left:</strong> ${timeLeft} seconds</p>
+                    <p><strong>Incorrect Answers:</strong> ${totalIncorrect}</p>
+                </div>
+            `;
+        }
+        
         document.getElementById('game-screen').innerHTML = `
             <h1>${reason}</h1>
-            <p style="font-size: 1.5em;">${penaltyMode ? 'Final Score: ' + score : 'Great job!'}</p>
-            <p>Please screenshot this.</p>
+            <p style="font-size: 1.5em; margin-bottom: 10px;">
+                ${penaltyMode ? 'Final Score: ' + score : 'Great Job!'}
+            </p>
+            ${statsHTML}
+            <p style="margin-top: 20px;">Please screenshot this.</p>
         `;
     }
 </script>
