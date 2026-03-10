@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Sequence Challenge</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f7f6; }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        .penalty-ui { color: #e74c3c; border: 2px solid #e74c3c; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; }
+        .game-ui { color: #2ecc71; border: 2px solid #2ecc71; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; }
+        input { padding: 12px; font-size: 18px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
+        button { background: #3498db; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #2980b9; }
+        #feedback { margin-top: 15px; font-weight: bold; height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 id="title">Skill Assessment 09-A</h2>
+    <div id="uiBox" class="penalty-ui">SCORE: 100</div>
+    <p id="subtext">Errors will result in immediate point deduction.</p>
+    
+    <hr>
+    
+    <p id="qText" style="font-size: 1.2em; margin: 20px 0;"></p>
+    <input type="text" id="userInput" autocomplete="off">
+    <br>
+    <button onclick="check()">Submit Answer</button>
+    <div id="feedback"></div>
+</div>
+
+<script>
+    // CONFIGURATION
+    const penaltyMode = true; // Set to false for the "Game" version
+    let score = 100;
+    let current = 0;
+    
+    const levels = [
+        {q: "2, 4, 6, 8, ...", a: "10"},
+        {q: "1, 2, 4, 8, ...", a: "16"},
+        {q: "1, 1, 2, 3, 5, ...", a: "8"},
+        {q: "2, 3, 5, 7, 11, ...", a: "13"},
+        {q: "A, C, E, G, ...", a: "I"}
+    ];
+
+    document.getElementById('qText').innerText = levels[current].q;
+    if(!penaltyMode) {
+        document.getElementById('title').innerText = "The Sequence Quest";
+        document.getElementById('uiBox').className = "game-ui";
+        document.getElementById('uiBox').innerText = "LEVEL: 1";
+        document.getElementById('subtext').innerText = "Explore the patterns to unlock the next level!";
+    }
+
+    function check() {
+        const input = document.getElementById('userInput').value.toUpperCase();
+        const feedback = document.getElementById('feedback');
+        
+        if(input === levels[current].a) {
+            current++;
+            if(current < levels.length) {
+                document.getElementById('qText').innerText = levels[current].q;
+                document.getElementById('userInput').value = "";
+                feedback.innerText = "Level Cleared!";
+                feedback.style.color = "#2ecc71";
+                if(!penaltyMode) document.getElementById('uiBox').innerText = "LEVEL: " + (current + 1);
+            } else {
+                alert("COMPLETED! Final Score: " + score + ". Screenshot this for your presentation results!");
+            }
+        } else {
+            if(penaltyMode) {
+                score -= 20;
+                document.getElementById('uiBox').innerText = "SCORE: " + score;
+                feedback.innerText = "WRONG. -20 POINTS.";
+                feedback.style.color = "#e74c3c";
+            } else {
+                feedback.innerText = "Not quite! Try another jump.";
+                feedback.style.color = "#3498db";
+            }
+        }
+    }
+</script>
+</body>
+</html>
