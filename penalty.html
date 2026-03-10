@@ -1,82 +1,169 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>The Sequence Challenge</title>
+    <title>Sequence Challenge</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f7f6; }
-        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 400px; text-align: center; }
-        .penalty-ui { color: #e74c3c; border: 2px solid #e74c3c; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; }
-        .game-ui { color: #2ecc71; border: 2px solid #2ecc71; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; }
-        input { padding: 12px; font-size: 18px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
-        button { background: #3498db; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 480px; text-align: center; position: relative; }
+        .penalty-ui { color: #e74c3c; border: 3px solid #e74c3c; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; background: #fdf2f2; }
+        .game-ui { color: #2ecc71; border: 3px solid #2ecc71; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; background: #f2fdf5; }
+        .timer-box { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #34495e; }
+        input { padding: 15px; font-size: 18px; width: 180px; text-align: center; border: 2px solid #ddd; border-radius: 10px; outline: none; }
+        button { background: #3498db; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; }
         button:hover { background: #2980b9; }
-        #feedback { margin-top: 15px; font-weight: bold; height: 20px; }
+        #feedback { margin-top: 15px; font-weight: bold; height: 24px; }
+        #game-screen { display: none; }
+        #welcome-screen { text-align: left; }
+        h1 { text-align: center; color: #2c3e50; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 id="title">Skill Assessment 09-A</h2>
-    <div id="uiBox" class="penalty-ui">SCORE: 100</div>
-    <p id="subtext">Errors will result in immediate point deduction.</p>
-    
-    <hr>
-    
-    <p id="qText" style="font-size: 1.2em; margin: 20px 0;"></p>
-    <input type="text" id="userInput" autocomplete="off">
-    <br>
-    <button onclick="check()">Submit Answer</button>
-    <div id="feedback"></div>
+    <div id="welcome-screen">
+        <h1 id="welcome-title">Welcome</h1>
+        <p id="welcome-text"></p>
+        <button onclick="startGame()">START ASSESSMENT</button>
+    </div>
+
+    <div id="game-screen">
+        <div class="timer-box">TIME REMAINING: <span id="timer">60</span>s</div>
+        <div id="uiBox">SCORE: 100</div>
+        <hr>
+        <p id="qText" style="font-size: 1.3em; font-weight: 600; margin: 20px 0; min-height: 40px;"></p>
+        <input type="text" id="userInput" placeholder="Type answer..." autocomplete="off">
+        <button onclick="check()">Submit Answer</button>
+        <div id="feedback"></div>
+    </div>
 </div>
 
 <script>
-    // CONFIGURATION
-    const penaltyMode = true; // Set to false for the "Game" version
+    // CONFIGURATION: Set to 'false' for the Game version (game.html)
+    const penaltyMode = true; 
+    const TOTAL_TIME = 60; // Total seconds for the test
+    
     let score = 100;
     let current = 0;
-    
+    let attempts = 0;
+    let timerInterval;
+    let timeLeft = TOTAL_TIME;
+
     const levels = [
-        {q: "2, 4, 6, 8, ...", a: "10"},
-        {q: "1, 2, 4, 8, ...", a: "16"},
-        {q: "1, 1, 2, 3, 5, ...", a: "8"},
-        {q: "2, 3, 5, 7, 11, ...", a: "13"},
-        {q: "A, C, E, G, ...", a: "I"}
+        {q: "5, 10, 15, 20, ...", a: "25"},
+        {q: "12:00, 3:00, 6:00, ...", a: "9:00"},
+        {q: "NW, NE, SE, ...", a: "SW"},
+        {q: "1, 4, 9, 16, ...", a: "25"},
+        {q: "M, T, W, T, ...", a: "F"},
+        {q: "Z, Y, X, W, ...", a: "V"},
+        {q: "1, 2, 6, 24, 120, ...", a: "720"},
+        {q: "Triangle, Square, Pentagon, ...", a: "HEXAGON"},
+        {q: "14, 28, 42, 70, 112, ...", a: "182"},
+        {q: "J, F, M, A, M, J, J, ...", a: "A"}
     ];
 
-    document.getElementById('qText').innerText = levels[current].q;
-    if(!penaltyMode) {
-        document.getElementById('title').innerText = "The Sequence Quest";
-        document.getElementById('uiBox').className = "game-ui";
-        document.getElementById('uiBox').innerText = "LEVEL: 1";
-        document.getElementById('subtext').innerText = "Explore the patterns to unlock the next level!";
+    // Setup Welcome Screen Text
+    if (penaltyMode) {
+        document.getElementById('welcome-title').innerText = "Sequence Assessment";
+        document.getElementById('welcome-text').innerText = "You will start with 100 points and will be given a series of 10 questions. Each wrong answer will deduct 10 points from your score. You will have two chances to answer a question correctly. You will have " + TOTAL_TIME + " seconds to complete the assessment. Your score will be given to you at the end, please screenshot this.";
+    } else {
+        document.getElementById('welcome-title').innerText = "Sequence Game!";
+        document.getElementById('welcome-text').innerText = "You will be given 10 questions and have " + TOTAL_TIME + " seconds to solve them. You will have two chances to answer each question correctly. Please screenshot your results at the end and have fun!";
+        document.querySelector('#welcome-screen button').innerText = "START GAME";
+    }
+
+    function startGame() {
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        updateUI();
+        startTimer();
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                finishGame("TIME EXPIRED!");
+            }
+        }, 1000);
+    }
+
+    function updateUI() {
+        attempts = 0;
+        document.getElementById('qText').innerText = levels[current].q;
+        document.getElementById('userInput').value = "";
+        document.getElementById('userInput').focus();
+        
+        const uiBox = document.getElementById('uiBox');
+        if (penaltyMode) {
+            uiBox.className = "penalty-ui";
+            uiBox.innerText = "SCORE: " + score;
+        } else {
+            uiBox.className = "game-ui";
+            uiBox.innerText = "LEVEL: " + (current + 1) + " / 10";
+        }
     }
 
     function check() {
-        const input = document.getElementById('userInput').value.toUpperCase();
+        const input = document.getElementById('userInput').value.trim().toUpperCase();
         const feedback = document.getElementById('feedback');
         
-        if(input === levels[current].a) {
+        if (input === levels[current].a) {
             current++;
-            if(current < levels.length) {
-                document.getElementById('qText').innerText = levels[current].q;
-                document.getElementById('userInput').value = "";
-                feedback.innerText = "Level Cleared!";
-                feedback.style.color = "#2ecc71";
-                if(!penaltyMode) document.getElementById('uiBox').innerText = "LEVEL: " + (current + 1);
+            feedback.innerText = "Correct!";
+            feedback.style.color = "#2ecc71";
+            if (current < levels.length) {
+                setTimeout(() => { feedback.innerText = ""; updateUI(); }, 600);
             } else {
-                alert("COMPLETED! Final Score: " + score + ". Screenshot this for your presentation results!");
+                clearInterval(timerInterval);
+                finishGame("COMPLETE.");
             }
         } else {
-            if(penaltyMode) {
-                score -= 20;
+            attempts++;
+            if (penaltyMode) {
+                score -= 10;
                 document.getElementById('uiBox').innerText = "SCORE: " + score;
-                feedback.innerText = "WRONG. -20 POINTS.";
-                feedback.style.color = "#e74c3c";
+                if (attempts < 2) {
+                    feedback.innerText = "INCORRECT. -10 POINTS. ONE MORE TRY.";
+                    feedback.style.color = "#e74c3c";
+                } else {
+                    feedback.innerText = "INCORRECT. MOVING TO NEXT QUESTION.";
+                    feedback.style.color = "#e74c3c";
+                    moveToNext();
+                }
             } else {
-                feedback.innerText = "Not quite! Try another jump.";
-                feedback.style.color = "#3498db";
+                if (attempts < 2) {
+                    feedback.innerText = "Incorrect, try again!";
+                    feedback.style.color = "#3498db";
+                } else {
+                    feedback.innerText = "Moving on to the next question!";
+                    feedback.style.color = "#3498db";
+                    moveToNext();
+                }
             }
         }
+    }
+
+    function moveToNext() {
+        current++;
+        setTimeout(() => {
+            if (current < levels.length) {
+                document.getElementById('feedback').innerText = ""; 
+                updateUI();
+            } else {
+                clearInterval(timerInterval);
+                finishGame("QUESTIONS COMPLETE!");
+            }
+        }, 1200);
+    }
+
+    function finishGame(reason) {
+        document.getElementById('game-screen').innerHTML = `
+            <h1>${reason}</h1>
+            <p style="font-size: 1.5em;">${penaltyMode ? 'Final Score: ' + score : 'Great job!'}</p>
+            <p>Please screenshot this.</p>
+        `;
     }
 </script>
 </body>
