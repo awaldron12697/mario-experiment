@@ -28,7 +28,7 @@
     </div>
 
     <div id="game-screen">
-        <div class="timer-box">TIME REMAINING: <span id="timer">60</span>s</div>
+        <div class="timer-box">TIME REMAINING: <span id="timer">90</span>s</div>
         <div id="uiBox">SCORE: 100</div>
         <hr>
         <p id="qText" style="font-size: 1.3em; font-weight: 600; margin: 20px 0; min-height: 40px;"></p>
@@ -39,8 +39,9 @@
 </div>
 
 <script>
-    const penaltyMode = false; // SET TO FALSE FOR GAME VERSION
-    const TOTAL_TIME = 60; 
+    // CONFIGURATION: Set to 'false' for the Game version (game.html)
+    const penaltyMode = true; 
+    const TOTAL_TIME = 90; 
     
     let score = 100;
     let current = 0;
